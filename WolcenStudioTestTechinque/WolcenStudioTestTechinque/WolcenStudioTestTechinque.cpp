@@ -61,8 +61,8 @@ int main()
 
 		//Calcul of the orthogonal projection of the movement Vector on the axe ship->nextCheckpoint
 		int scalarProduct = (movementVector[0] * axisVector[0]) + (movementVector[1] * axisVector[1]);
-		projOrthoMoveVector[0] = ((float)scalarProduct / (float)pow(speed, 2)) * axisVector[0];
-		projOrthoMoveVector[1] = ((float)scalarProduct / (float)pow(speed, 2)) * axisVector[1];
+		projOrthoMoveVector[0] = ((float)scalarProduct / (float)pow(nextCheckpointDist, 2)) * axisVector[0];
+		projOrthoMoveVector[1] = ((float)scalarProduct / (float)pow(nextCheckpointDist, 2)) * axisVector[1];
 
 		//calcul of the estimated deviation from a straight line, movementVector minus it's orthogonal projection
 		deviationVector[0] = movementVector[0] - projOrthoMoveVector[0];
@@ -70,10 +70,11 @@ int main()
 
 		//Calcul of the correction vector for the current trajectory
 		float normeOfProjOthro = sqrt(pow(projOrthoMoveVector[0], 2) + pow(projOrthoMoveVector[1], 2));
+
 		//Use of Thales theorem to find the vector Orthogonal to AxisVector, and colinear to movementVector
 		//Then we use the opposit of this vector as the trajectory correction
-		trajCorrectionVector[0] = - (int)(((float)nextCheckpointDist / (float)normeOfProjOthro) * deviationVector[0]);
-		trajCorrectionVector[1] = - (int)(((float)nextCheckpointDist / (float)normeOfProjOthro) * deviationVector[1]);
+		trajCorrectionVector[0] = -(int)(((float)nextCheckpointDist / (float)normeOfProjOthro) * deviationVector[0]);
+		trajCorrectionVector[1] = -(int)(((float)nextCheckpointDist / (float)normeOfProjOthro) * deviationVector[1]);
 
         // Write an action using cout. DON'T FORGET THE "<< endl"
         // To debug: cerr << "Debug messages..." << endl;
@@ -91,11 +92,12 @@ int main()
 			thrust = 100;
 		}
 
+		
 		//Ajusting the thrust with the distance of the next checkpoint (kind of braking system)
 		if (speed > maneuverabilitySpeed && nextCheckpointDist <= startBakeDistance) {
 			thrust = (nextCheckpointDist * 100) / startBakeDistance;
 		}
-
+		
 		//Use the boost in a big staight line (try to avoid drifting)
 		if (boostAvailable && nextCheckpointAngle == 0 && nextCheckpointDist >= minDistanceForBoost) {
 			boostAvailable = false;
@@ -108,7 +110,13 @@ int main()
 		cerr << "Distance : " << nextCheckpointDist << endl;
 		cerr << "Angle : " << nextCheckpointAngle << endl;
 		cerr << "Thrust : " << thrust << endl;
+		cerr << "Current Position : " << x << " ," << y << endl;
 		cerr << "Moving Vector : [" << movementVector[0] << ", " << movementVector[1] << "]" << endl;
+		cerr << "Axis Vector : [" << axisVector[0] << ", " <<	axisVector[1] << "]" << endl;
+		cerr << "Proj Ortho Moving Vector : [" << projOrthoMoveVector[0] << ", " << projOrthoMoveVector[1] << "]" << endl;
+		cerr << "Deviation Vector : [" << deviationVector[0] << ", " << deviationVector[1] << "]" << endl;
+		cerr << "Next Checkpoint Position : " << nextCheckpointX << " ," << nextCheckpointY << endl;
+		cerr << "Traj Correction Vector : [" << trajCorrectionVector[0] << ", " << trajCorrectionVector[1] << "]" << endl;
 
 		//Action to do
 		//Added the vector correction to the coordinates we are aiming
