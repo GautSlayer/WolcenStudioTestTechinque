@@ -21,12 +21,13 @@ int main()
 	int maxAngleForThrust = 120; //The max angle at which we can allow thrust, if the angle between us and the target is greater, thrust = 0
 	int minAngleForThrust = 15; //The min angle between us and the target that we allow full thrust
 	float maneuverabilitySpeed = 300; //vitesse max authorized for maneuvres (turns), we do not use the "brakes" under that speed
-	int startBakeDistance = 4000; //Minimal distance to start using brakes.
+	int startBakeDistance = -1; //Minimal distance to start using brakes.
 	int movementVector [2]; //The movement Vector of our ship
 	float projOrthoMoveVector[2]; //Orthogonal projection of the movement Vector on the axe ship->nextCheckpoint
 	int axisVector[2]; //The vector from the current position of the ship toward the nextCheckpoint (used for orthogonal projection)
 	int trajCorrectionVector [2]; //The correction vector to apply on the trajectory
 	float deviationVector[2]; //The estimated deviation from a straight line, movementVector minus it's orthogonal projection
+	float correctionFactor = 25; //Correction factor for the trajectory, 100 = 100% correction, 0 = 0%
 
     // game loop
     while (1) {
@@ -73,8 +74,8 @@ int main()
 
 		//Use of Thales theorem to find the vector Orthogonal to AxisVector, and colinear to movementVector
 		//Then we use the opposit of this vector as the trajectory correction
-		trajCorrectionVector[0] = -(int)(((float)nextCheckpointDist / (float)normeOfProjOthro) * deviationVector[0]);
-		trajCorrectionVector[1] = -(int)(((float)nextCheckpointDist / (float)normeOfProjOthro) * deviationVector[1]);
+		trajCorrectionVector[0] = -(int)((((float)nextCheckpointDist / (float)normeOfProjOthro) * deviationVector[0]) * (correctionFactor / 100));
+		trajCorrectionVector[1] = -(int)((((float)nextCheckpointDist / (float)normeOfProjOthro) * deviationVector[1]) * (correctionFactor / 100));
 
         // Write an action using cout. DON'T FORGET THE "<< endl"
         // To debug: cerr << "Debug messages..." << endl;
@@ -98,6 +99,7 @@ int main()
 			thrust = (nextCheckpointDist * 100) / startBakeDistance;
 		}
 		
+
 		//Use the boost in a big staight line (try to avoid drifting)
 		if (boostAvailable && nextCheckpointAngle == 0 && nextCheckpointDist >= minDistanceForBoost) {
 			boostAvailable = false;
@@ -120,6 +122,6 @@ int main()
 
 		//Action to do
 		//Added the vector correction to the coordinates we are aiming
-		cout << nextCheckpointX + trajCorrectionVector[0] << " " << nextCheckpointY +trajCorrectionVector[1] << " " << thrust << endl;
+		cout << nextCheckpointX + trajCorrectionVector[0] << " " << nextCheckpointY + trajCorrectionVector[1] << " " << thrust << endl;
     }
 }
