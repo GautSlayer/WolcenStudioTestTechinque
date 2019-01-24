@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include <math.h>
+#include <list>
 
 using namespace std;
 
@@ -10,6 +11,16 @@ using namespace std;
  * Auto-generated code below aims at helping you parse
  * the standard input according to the problem statement.
  **/
+
+ //fonction to add a int[2] to a list<int*>, made to avoid code repetition during memorization of Chechpoints
+//not working, the list is always empty, cause I have to pass the adress of the list, I think
+void addPointToCPList(list<int*>* list, int* CP, int x, int y)
+{
+	CP[0] = x;
+	CP[1] = x;
+	(*list).push_back(CP);
+}
+
 int main()
 {
     int thrust; //amount of thrust
@@ -27,7 +38,11 @@ int main()
 	int axisVector[2]; //The vector from the current position of the ship toward the nextCheckpoint (used for orthogonal projection)
 	int trajCorrectionVector [2]; //The correction vector to apply on the trajectory
 	float deviationVector[2]; //The estimated deviation from a straight line, movementVector minus it's orthogonal projection
-	float correctionFactor = 25; //Correction factor for the trajectory, 100 = 100% correction, 0 = 0%
+	float correctionFactor = 20; //Correction factor for the trajectory, 100 = 100% correction, 0 = 0%
+	list<int*> listOfCPs; //The list of checkpoints
+	bool firstLapDone = false; //Indicator if we have done the first lap
+	int lastRegisteredCP[2]; //Last CP memorized 
+	bool firstGameLoop = true; //Bool to know if it's the first gameloop
 
     // game loop
     while (1) {
@@ -46,7 +61,65 @@ int main()
         int opponentX;
         int opponentY;
         cin >> opponentX >> opponentY; cin.ignore();
-
+		
+		//If we are in the first gameloop, there is no previousX and previousY, I can cause unwanted movement
+		if (firstGameLoop)
+		{
+			previousX = x-1;
+			previousY = y-1;
+			firstGameLoop = false;
+		}
+		
+		//Memorisation of Checkpoints positions
+		if (!firstLapDone)
+		{
+			//If the list is empty, we had the nextCheckpoint to it
+			if (!listOfCPs.empty())
+			{
+				int* firstCP = listOfCPs.front();
+				list<int*>::iterator it;
+				//show all CP registered, for debug purpose
+				for (it = listOfCPs.begin(); it != listOfCPs.end(); ++it)
+				{
+					cerr << "CP : [" << (*it)[0] << ", " << (*it)[1] << "]" << endl;
+				}
+				//If we have only one CP, we wait for the next CP to change, and we add it, can cause problem if there is only 1 CP in the race
+				if (listOfCPs.size() == 1)
+				{
+					if (lastRegisteredCP[0] != nextCheckpointX && lastRegisteredCP[1] != nextCheckpointY)
+					{
+						lastRegisteredCP[0] = nextCheckpointX;
+						lastRegisteredCP[1] = nextCheckpointY;
+						listOfCPs.push_back(lastRegisteredCP);
+						//addPointToCPList(listOfCPs, lastRegisteredCP, nextCheckpointX, nextCheckpointY);
+					}
+				}
+				//if we meet againt the first CP registered, we have done a lap
+				else if (firstCP[0] == nextCheckpointX && firstCP[1] == nextCheckpointY)
+				{
+					firstLapDone = true;
+					cerr << "Lap Done" << endl;
+				}
+				//if the current nextCheckPoint is not the last CP registered (not encountered yet), we had it
+				else if(lastRegisteredCP[0] != nextCheckpointX && lastRegisteredCP[1] != nextCheckpointY)
+				{
+					lastRegisteredCP[0] = nextCheckpointX;
+					lastRegisteredCP[1] = nextCheckpointY;
+					listOfCPs.push_back(lastRegisteredCP);
+					
+					//addPointToCPList(listOfCPs, lastRegisteredCP, nextCheckpointX, nextCheckpointY);
+				}
+			}
+			else
+			{
+				
+				lastRegisteredCP[0] = nextCheckpointX;
+				lastRegisteredCP[1] = nextCheckpointY;
+				listOfCPs.push_back(lastRegisteredCP);
+				
+				//addPointToCPList(listOfCPs, lastRegisteredCP, nextCheckpointX, nextCheckpointY);
+			}
+		}
 		
 
 		//calcul of the distance traveled during the last loop
@@ -86,7 +159,8 @@ int main()
         // i.e.: "x y thrust"
         
         //ajust thrust when the ship is not align with the destination (limit drifting)
-        if(abs(nextCheckpointAngle) >= maxAngleForThrust){
+        if(abs(nextCheckpointAngle) >= maxAngleForThrust)
+		{
             thrust = 0;
         }
 		else {
@@ -95,13 +169,15 @@ int main()
 
 		
 		//Ajusting the thrust with the distance of the next checkpoint (kind of braking system)
-		if (speed > maneuverabilitySpeed && nextCheckpointDist <= startBakeDistance) {
+		if (speed > maneuverabilitySpeed && nextCheckpointDist <= startBakeDistance)
+		{
 			thrust = (nextCheckpointDist * 100) / startBakeDistance;
 		}
 		
 
 		//Use the boost in a big staight line (try to avoid drifting)
-		if (boostAvailable && nextCheckpointAngle == 0 && nextCheckpointDist >= minDistanceForBoost) {
+		if (boostAvailable && nextCheckpointAngle == 0 && nextCheckpointDist >= minDistanceForBoost)
+		{
 			boostAvailable = false;
 			cout << nextCheckpointX << " " << nextCheckpointY << " " << "BOOST" << endl;
 		}
@@ -112,6 +188,8 @@ int main()
 		cerr << "Distance : " << nextCheckpointDist << endl;
 		cerr << "Angle : " << nextCheckpointAngle << endl;
 		cerr << "Thrust : " << thrust << endl;
+
+		/*
 		cerr << "Current Position : " << x << " ," << y << endl;
 		cerr << "Moving Vector : [" << movementVector[0] << ", " << movementVector[1] << "]" << endl;
 		cerr << "Axis Vector : [" << axisVector[0] << ", " <<	axisVector[1] << "]" << endl;
@@ -119,6 +197,7 @@ int main()
 		cerr << "Deviation Vector : [" << deviationVector[0] << ", " << deviationVector[1] << "]" << endl;
 		cerr << "Next Checkpoint Position : " << nextCheckpointX << " ," << nextCheckpointY << endl;
 		cerr << "Traj Correction Vector : [" << trajCorrectionVector[0] << ", " << trajCorrectionVector[1] << "]" << endl;
+		*/
 
 		//Action to do
 		//Added the vector correction to the coordinates we are aiming
